@@ -8,6 +8,8 @@
 #include <algorithm>
 #include <thread>
 #include <chrono>
+#include <filesystem>
+#include <sstream>
 
 class Sorter {
 public:
@@ -41,4 +43,8 @@ private:
     void WriteFilesToFiles(const std::vector<FileInfo>& files, int numParts);
     void ReadFilesFromParts(int numParts, std::vector<FileInfo>& files);
     void ProcessCompleted(HANDLE processHandle, int index, int sortCase);
+
+
+    //std::wstring ConvertFileTimeToDateString(const FILETIME& fileTime);
+    FILETIME GetCreationTime(const std::wstring& path);
 };

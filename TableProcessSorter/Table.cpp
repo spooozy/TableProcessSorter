@@ -22,6 +22,9 @@ void Table::fillTable(std::wstring dir) {
 	createCells();
 	for (int i = 0;i < rows;i++)
 	{
+		if (filesInfo[i].fileName == L"") filesInfo[i].fileName = L" ";
+		if (filesInfo[i].fileExtension == L"") filesInfo[i].fileExtension = L" ";
+		if (filesInfo[i].creationDate == L"") filesInfo[i].creationDate = L" ";
 		cells[i][0].text = filesInfo[i].fileName;
 		cells[i][1].text = filesInfo[i].fileExtension;
 		cells[i][2].text = filesInfo[i].creationDate;
@@ -195,6 +198,9 @@ void Table::handleClick(int clickPosX, int clickPosY) {
 	filesInfoSorted = sorter->getSortedData();
 	for (int i = 0;i < rows;i++)
 	{
+		if (filesInfoSorted[i].fileName == L"") filesInfoSorted[i].fileName = L" ";
+		if (filesInfoSorted[i].fileExtension == L"") filesInfoSorted[i].fileExtension = L" ";
+		if (filesInfoSorted[i].creationDate == L"") filesInfoSorted[i].creationDate = L" ";
 		cells[i][3].text = filesInfoSorted[i].fileName;
 		cells[i][4].text = filesInfoSorted[i].fileExtension;
 		cells[i][5].text = filesInfoSorted[i].creationDate;

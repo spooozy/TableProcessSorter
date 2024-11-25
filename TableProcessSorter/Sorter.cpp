@@ -1,42 +1,92 @@
 #include "Sorter.h"
 
+
+
 Sorter::Sorter(std::wstring folderPath) {
     this->folderPath = folderPath;
 }
 
+//std::wstring Sorter::ConvertFileTimeToDateString(const FILETIME& fileTime) {
+//    SYSTEMTIME st;
+//    FileTimeToSystemTime(&fileTime, &st);
+//    wchar_t buffer[100];
+//    /*std::swprintf(buffer, sizeof(buffer) / sizeof(wchar_t), L"%02d.%02d.%04d",
+//        st.wDay, st.wMonth, st.wYear);*/
+//    std::swprintf(buffer, sizeof(buffer) / sizeof(wchar_t), L"%04d.%02d.%02d",
+//        st.wYear, st.wMonth, st.wDay);
+//    return buffer;
+//}
+
+//
+//void Sorter::ProcessDirectory(const std::wstring& dirPath) {
+//    /* WIN32_FIND_DATA findFileData;
+//    HANDLE hFind = FindFirstFile((dirPath + L"\\*").c_str(), &findFileData);
+//
+//    if (hFind == INVALID_HANDLE_VALUE) {
+//        return;
+//    }
+//    do {
+//        if (!(findFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+//            FileInfo info;
+//            info.fileName = findFileData.cFileName;
+//            info.fileExtension = info.fileName.substr(info.fileName.find_last_of(L"."));
+//            info.creationDate = ConvertFileTimeToDateString(findFileData.ftCreationTime);
+//            filesInfo.push_back(info);
+//        }
+//        else if (wcscmp(findFileData.cFileName, L".") != 0 && wcscmp(findFileData.cFileName, L"..") != 0) {
+//            ProcessDirectory(dirPath + L"\\" + findFileData.cFileName);
+//        }
+//    } while (FindNextFile(hFind, &findFileData) != 0);
+//
+//    FindClose(hFind);*/
+//   
+//
+//    
+//}
+
 std::wstring Sorter::ConvertFileTimeToDateString(const FILETIME& fileTime) {
-    SYSTEMTIME st;
-    FileTimeToSystemTime(&fileTime, &st);
-    wchar_t buffer[100];
-    /*std::swprintf(buffer, sizeof(buffer) / sizeof(wchar_t), L"%02d.%02d.%04d",
-        st.wDay, st.wMonth, st.wYear);*/
-    std::swprintf(buffer, sizeof(buffer) / sizeof(wchar_t), L"%04d.%02d.%02d",
-        st.wYear, st.wMonth, st.wDay);
-    return buffer;
+    SYSTEMTIME systemTime;
+    FileTimeToSystemTime(&fileTime, &systemTime);
+
+    std::wstringstream ss;
+    ss << std::setw(4) << systemTime.wYear << L'.'
+        << std::setw(2) << std::setfill(L'0') << systemTime.wMonth << L'.'
+        << std::setw(2) << std::setfill(L'0') << systemTime.wDay;
+    return ss.str();
+}
+
+// Функция для получения времени создания файла
+FILETIME Sorter::GetCreationTime(const std::wstring& path) {
+    WIN32_FILE_ATTRIBUTE_DATA fileInfo;
+    if (GetFileAttributesEx(path.c_str(), GetFileExInfoStandard, &fileInfo)) {
+        return fileInfo.ftCreationTime;
+    }
+    throw std::runtime_error("Не удалось получить атрибуты файла.");
 }
 
 void Sorter::ProcessDirectory(const std::wstring& dirPath) {
-    WIN32_FIND_DATA findFileData;
-    HANDLE hFind = FindFirstFile((dirPath + L"\\*").c_str(), &findFileData);
+    try {
+        for (const std::filesystem::directory_entry& entry : std::filesystem::recursive_directory_iterator(dirPath)) {
+            if (std::filesystem::is_regular_file(entry.status())) {
+                std::wstring fullFilename = entry.path().filename().wstring();
+                std::wstring fileExtension = entry.path().extension().wstring();
+                
+                // Получаем время создания файла
+                FILETIME creationTime = GetCreationTime(entry.path().wstring());
+                std::wstring creationDate = ConvertFileTimeToDateString(creationTime);
 
-    if (hFind == INVALID_HANDLE_VALUE) {
-        return;
+                FileInfo fileInfo = { fullFilename, fileExtension, creationDate };
+                filesInfo.push_back(fileInfo);
+            }
+        }
     }
-    do {
-        if (!(findFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-            FileInfo info;
-            info.fileName = findFileData.cFileName;
-            info.fileExtension = info.fileName.substr(info.fileName.find_last_of(L"."));
-            info.creationDate = ConvertFileTimeToDateString(findFileData.ftCreationTime);
-            filesInfo.push_back(info);
-        }
-        else if (wcscmp(findFileData.cFileName, L".") != 0 && wcscmp(findFileData.cFileName, L"..") != 0) {
-            ProcessDirectory(dirPath + L"\\" + findFileData.cFileName);
-        }
-    } while (FindNextFile(hFind, &findFileData) != 0);
-
-    FindClose(hFind);
+    catch (const std::filesystem::filesystem_error& e) {
+    }
+    catch (const std::runtime_error& e) {
+    }
 }
+
+
 
 void Sorter::swap(std::vector<FileInfo>& files, size_t first, size_t second) {
     auto temp = files[first];
